@@ -1,4 +1,3 @@
-import java.util.Arrays;
 import java.util.Scanner;
 
 public class Main {
@@ -30,35 +29,19 @@ public class Main {
         return -1; // Không hợp lệ nếu n lớn hơn size
     }
 
-    // Tạo dãy Fibonacci có kích thước 2 * m (m là giá trị nhập từ người dùng)
-    public void createFibonacciForM(long m) {
-        int newSize = (int) (2 * m); // Kích thước mới cần tính toán
-        dp = new long[newSize + 1];
-
-        // Tính dãy Fibonacci
-        dp[0] = 0;
-        if (newSize > 0) {
-            dp[1] = 1;
-        }
-        for (int i = 2; i <= newSize; i++) {
-            dp[i] = dp[i - 1] + dp[i - 2];
-        }
-    }
 
     // Tìm phần tử có giá trị gần m nhất
     public long closestToM(long m) {
-        int pos = Arrays.binarySearch(dp, 0, size + 1, m);
+        long closest = dp[0];  // Khởi tạo phần tử gần nhất là dp[0]
+        long minDifference = Math.abs(dp[0] - m);  // Khởi tạo hiệu số nhỏ nhất
 
-        if (pos < 0) {
-            pos = -pos - 1;
-        }
-
-        long closest = dp[pos];
-        if (pos > 0 && Math.abs(dp[pos - 1] - m) < Math.abs(closest - m)) {
-            closest = dp[pos - 1];
-        }
-        if (pos < size && Math.abs(dp[pos + 1] - m) < Math.abs(closest - m)) {
-            closest = dp[pos + 1];
+        // Duyệt qua tất cả các phần tử trong dãy Fibonacci
+        for (int i = 1; i <= size; i++) {
+            long diff = Math.abs(dp[i] - m);  // Tính hiệu số tuyệt đối
+            if (diff < minDifference) {
+                closest = dp[i];  // Cập nhật giá trị gần nhất
+                minDifference = diff;  // Cập nhật hiệu số nhỏ nhất
+            }
         }
 
         return closest;
@@ -78,7 +61,7 @@ public class Main {
         System.out.print("Nhập m: ");
         long m = scanner.nextLong();
         Main fib2 = new Main(2 * (int) m); // Tạo dãy Fibonacci với size tối đa gấp đôi m
-        fib2.createFibonacciForM(m); // Tạo lại dãy Fibonacci với kích thước mới
+        fib2.computeFibonacci(); // Tạo lại dãy Fibonacci với kích thước mới
 
         // Tìm phần tử gần m nhất
         System.out.println("Phần tử Fibonacci gần " + m + " nhất là: " + fib2.closestToM(m));
