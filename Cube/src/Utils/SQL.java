@@ -20,9 +20,10 @@ public class SQL {
     }
 
     /** Đọc tất cả score từ bảng Score */
-    public static List<int[]> selectScores() {
-        List<int[]> scores = new ArrayList<>();
-        String sql = "SELECT id, score FROM Score ORDER BY score DESC";
+    public static List<String[]> selectScores(boolean ascending) {
+        List<String[]> scores = new ArrayList<>();
+        String order = ascending ? "ASC" : "DESC";
+        String sql = "SELECT * FROM Score ORDER BY score " + order;
         try (
             Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
             Statement stmt = conn.createStatement(
@@ -31,9 +32,10 @@ public class SQL {
             ResultSet rs = stmt.executeQuery(sql)
         ) {
             while (rs.next()) {
-                int id    = rs.getInt("id");
+            	int id = rs.getInt("id");
                 int score = rs.getInt("score");
-                scores.add(new int[]{ id, score });
+                String status = rs.getString("status");
+                scores.add(new String[]{ String.valueOf(id), String.valueOf(score), status });
             }
         } catch (SQLException e) {
             System.err.println("Error when selecting scores.");
@@ -43,14 +45,15 @@ public class SQL {
     }
     
     /** Thêm 1 record score mới vào bảng Score */
-    public static void insertScore(int score) {
-        String sql = "INSERT INTO Score(id, score) VALUES(?, ?)";
+    public static void insertScore(int score, String status) {
+        String sql = "INSERT INTO Score(id, score, status) VALUES(?, ?, ?)";
         try (
             Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
             PreparedStatement ps = conn.prepareStatement(sql)
         ) {
         	ps.setInt(1, generateNewId()); 
             ps.setInt(2, score);
+            ps.setString(3, status);
             ps.executeUpdate();
         } catch (SQLException e) {
             System.err.println("Error when inserting score.");

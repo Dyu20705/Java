@@ -1,10 +1,14 @@
 package Controller;
 
+import javax.swing.JButton;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.Timer;
+import javax.swing.table.DefaultTableModel;
 
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -22,7 +26,7 @@ public class Game extends KeyAdapter {
 	private final Player player;
 	private final Board board;
 	private final Enemy enemy;
-	private int delay = 1; // FPS = 1000
+	private int delay = 16; // FPS = 60
 	private int counterBoss = 0; // Số lần enemy bắn
 	private int counterPlayer = 0; // Số lần player bắn
 	private boolean isPaused = false; // Trạng thái game
@@ -59,11 +63,8 @@ public class Game extends KeyAdapter {
 			return;
 		}
 
-		// 2. Cập nhật tần suất bắn của player và enemy
-		if (counterPlayer % 10 == 0) {
-			player.attack();
-		}
-		if (counterBoss % 50 == 0) {
+		// 2. Cập nhật tần suất bắn của enemy
+		if (counterBoss % 10 == 0) {
 			enemy.attack();
 		}
 
@@ -111,14 +112,12 @@ public class Game extends KeyAdapter {
 
 	private void showGameOverMessage() {
 		// Xác định winner
-		String winner = player.isAlive() ? "Player" : "Enemy";
-
+		String status = player.isAlive() ? "Thắng" : "Thua";
 		// Đưa điểm vào database
-		SQL.insertScore(menu.getScore());
+		SQL.insertScore(menu.getScore(), status);
 
 		// Hiển thị thông báo
-		int option = JOptionPane.showConfirmDialog(board, winner + " Wins! Do you want to restart?", "Game Over",
-				JOptionPane.YES_NO_OPTION);
+		int option = JOptionPane.showConfirmDialog(board, "Bạn đã " + status, "Game Over", JOptionPane.YES_NO_OPTION);
 
 		if (option == JOptionPane.YES_OPTION) {
 			restartGame();
@@ -149,13 +148,17 @@ public class Game extends KeyAdapter {
 		case KeyEvent.VK_UP -> player.moveUp();
 		case KeyEvent.VK_DOWN -> player.moveDown();
 		case KeyEvent.VK_SPACE -> player.attack();
+		case KeyEvent.VK_SHIFT -> player.dash();
 		}
 	}
 
 	// Xử lý các phím thả
 	@Override
 	public void keyReleased(KeyEvent e) {
-		return;
+		if (e.getKeyCode() == KeyEvent.VK_SHIFT) {
+			player.undash();
+		}
+
 	}
 
 	// Kiểm tra trạng thái game
@@ -186,8 +189,6 @@ public class Game extends KeyAdapter {
 		case 3 -> loadGame();
 		case 4 -> showAchievements();
 		}
-		
-		board.focus();
 	}
 
 	public boolean isPaused() {
@@ -218,41 +219,96 @@ public class Game extends KeyAdapter {
 
 	private void saveGame() {
 		file.saveGame(enemy.getHp(), player.getHp());
-		JOptionPane.showMessageDialog(board, "Game saved!");
+		JOptionPane.showMessageDialog(board, "Đã lưu game (Slot: " + file.readAllSaves().size() + ")");
 	}
 
 	private void loadGame() {
-		file.loadGame();
+		List<String> saves = file.readAllSaves();
+		if (saves.isEmpty()) {
+			JOptionPane.showMessageDialog(board, "Không có save nào!");
+			return;
+		}
 
-		// Reset lại các thông số
-		List<Bullet> pBullets = player.getBullets();
-		pBullets.clear();
-		List<Bullet> eBullets = enemy.getBullets();
-		eBullets.clear();
+		// Tạo danh sách slot để hiển thị
+		String[] saveSlots = new String[saves.size()];
+		for (int i = 0; i < saves.size(); i++) {
+			String save = saves.get(i);
+			int bossHp = Integer.parseInt(save.substring(1, 6));
+			int playerHp = Integer.parseInt(save.substring(6, 8));
+			saveSlots[i] = String.format("Slot %d | Boss HP: %d | Player HP: %d", i + 1, bossHp, playerHp);
+		}
 
-		counterPlayer = 0;
-		counterBoss = 0;
-		isPaused = false;
+		// Hiển thị dialog chọn slot
+		String selected = (String) JOptionPane.showInputDialog(board, "Chọn slot để load:", "Load Game",
+				JOptionPane.PLAIN_MESSAGE, null, saveSlots, saveSlots[0]);
 
-		JOptionPane.showMessageDialog(board, "Game loaded!");
+		if (selected != null) {
+			int slot = Integer.parseInt(selected.split("\\|")[0].replaceAll("\\D+", ""));
+			file.loadGame(slot);
+			resetBulletsAndState();
+			JOptionPane.showMessageDialog(board, "Đã load slot " + slot);
+		}
 	}
 
-	private void showAchievements() { 
-	    // Lấy dữ liệu thành tựu như cũ
-	    List<int[]> data = SQL.selectScores();
-	    String[] columns = { "ID", "Score" };
-	    Object[][] tableData = new Object[data.size()][2];
-	    for (int i = 0; i < data.size(); i++) {
-	        tableData[i][0] = data.get(i)[0];
-	        tableData[i][1] = data.get(i)[1];
-	    }
-	    JTable table = new JTable(tableData, columns);
-	    table.setFillsViewportHeight(true);
-	    JScrollPane scroll = new JScrollPane(table);
-	    scroll.setPreferredSize(new Dimension(300, 200));
+	private void showAchievements() {
+		// Thêm nút sắp xếp
+		JPanel panel = new JPanel(new BorderLayout());
+		JButton sortAscButton = new JButton("Sắp xếp tăng dần");
+		JButton sortDescButton = new JButton("Sắp xếp giảm dần");
 
-	    // Hiển thị hộp thoại modal
-	    JOptionPane.showMessageDialog(board, scroll, "Achievements", JOptionPane.PLAIN_MESSAGE);
+//	    // Lấy dữ liệu thành tựu như cũ
+//	    List<int[]> data = SQL.selectScores();
+//	    String[] columns = { "ID", "Score" };
+//	    Object[][] tableData = new Object[data.size()][2];
+//	    for (int i = 0; i < data.size(); i++) {
+//	        tableData[i][0] = data.get(i)[0];
+//	        tableData[i][1] = data.get(i)[1];
+//	    }
+//	    JTable table = new JTable(tableData, columns);
+//	    table.setFillsViewportHeight(true);
+//	    JScrollPane scroll = new JScrollPane(table);
+//	    scroll.setPreferredSize(new Dimension(300, 200));
+//
+//	    // Hiển thị hộp thoại modal
+//	    JOptionPane.showMessageDialog(board, scroll, "Achievements", JOptionPane.PLAIN_MESSAGE);
+
+		// Bảng dữ liệu
+		String[] columns = { "ID", "Điểm", "Trạng thái" };
+		Object[][] tableData = loadTableData(true); // Mặc định sắp xếp tăng dần
+
+		JTable table = new JTable(tableData, columns);
+		JScrollPane scroll = new JScrollPane(table);
+		scroll.setPreferredSize(new Dimension(400, 200));
+
+		// Xử lý sự kiện nút
+		sortAscButton.addActionListener(e -> {
+			table.setModel(new DefaultTableModel(loadTableData(true), columns));
+		});
+
+		sortDescButton.addActionListener(e -> {
+			table.setModel(new DefaultTableModel(loadTableData(false), columns));
+		});
+
+		// Thêm components vào panel
+		JPanel buttonPanel = new JPanel();
+		buttonPanel.add(sortAscButton);
+		buttonPanel.add(sortDescButton);
+		panel.add(buttonPanel, BorderLayout.NORTH);
+		panel.add(scroll, BorderLayout.CENTER);
+
+		// Hiển thị
+		JOptionPane.showMessageDialog(board, panel, "Thành tích", JOptionPane.PLAIN_MESSAGE);
+	}
+
+	private Object[][] loadTableData(boolean ascending) {
+		List<String[]> data = SQL.selectScores(ascending);
+		Object[][] result = new Object[data.size()][3];
+		for (int i = 0; i < data.size(); i++) {
+			result[i][0] = data.get(i)[0]; // ID
+			result[i][1] = data.get(i)[1]; // Điểm
+			result[i][2] = data.get(i)[2]; // Trạng thái
+		}
+		return result;
 	}
 
 	private void restartGame() {
@@ -309,5 +365,14 @@ public class Game extends KeyAdapter {
 
 	public void setMenu(Menu menu) {
 		this.menu = menu;
+	}
+
+	private void resetBulletsAndState() {
+		player.getBullets().clear();
+		enemy.getBullets().clear();
+		counterPlayer = 0;
+		counterBoss = 0;
+		isPaused = false;
+		board.focus();
 	}
 }

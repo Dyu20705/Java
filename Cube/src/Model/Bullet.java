@@ -103,7 +103,8 @@ public class Bullet implements Entity {
 		double dy = speed * Math.sin(angle);
 		move(dx, dy);
 	}
-
+	
+	// To do: cần update lại -> bắn bung tỏa
 	public void spiral() {
 		spiralOffset += 0.05; // Tốc độ xoắn
 		double currentAngle = angle + spiralOffset;
@@ -119,7 +120,8 @@ public class Bullet implements Entity {
 		this.vy = Math.sin(angleRad);
 		move(vx * speed, vy * speed);
 	}
-
+	
+	// To do: Đạn hướng theo player
 //	public void homing(Player player) {
 //		if (player == null) return;
 //

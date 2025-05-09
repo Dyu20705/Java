@@ -110,5 +110,4 @@ public class Menu extends JPanel {
 	public Game getGame() {
 		return game;
 	}
-
 }

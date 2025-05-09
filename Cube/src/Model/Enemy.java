@@ -15,7 +15,8 @@ public class Enemy implements Entity {
 	private int hp = 10000;
 	private final int maxHp = 10000;
 	private int speed = 1;
-//	private int direction = 1;
+	private int attackSpeed = 2; // Tốc độ bắn
+	private int direction = 1;
 	private double spiralAngle = 0;
 	private double centerAngle = 90; // Góc trung tâm (đi xuống)
 	private double control = 1;
@@ -97,36 +98,38 @@ public class Enemy implements Entity {
 		this.speed = speed;
 	}
 
+	//To do: enemy có thẻ di chuyển
 	@Override
 	public void move(double dx, double dy) {
-//		if (board == null)
-//			return;
-//		this.x += dx;
-//		this.y += dy;
+		if (board == null)
+			return;
+		this.x += dx;
+		this.y += dy;
 	}
 
 	public void move() {
-//		if (x + enemyWidth >= board.getW() * 3 / 4) {
-//			direction = -1;
-//		}
-//
-//		if (x <= 1) {
-//			direction = 1;
-//		}
-//
-//		move(speed * direction, 0);
+		if (x + enemyWidth >= board.getW() * 3 / 4) {
+			direction = -1;
+		}
+
+		if (x <= 1) {
+			direction = 1;
+		}
+
+		move(speed * direction, 0);
 	}
 
 	private void attackRadial() {
-		int count = 12; // Số lượng đạn
+		int count = 20; // Số lượng đạn
 		for (int i = 0; i < count; i++) {
 			double angle = (2 * Math.PI / count) * i; // Góc phân bố đều
 			// Tạo đạn ở vị trí boss và set góc
-			Bullet bullet = new Bullet(x + enemyWidth / 2, y + enemyHeight, 1, angle, 0);
+			Bullet bullet = new Bullet(x + enemyWidth / 2, y + enemyHeight, attackSpeed, angle, 0);
 			bullets.add(bullet);
 		}
 	}
-
+	
+	// To do: cần update lại -> bắn bung tỏa
 	private void attackSpiral() {
 		int bulletsPerWave = 12; // Số đạn mỗi vòng xoắn
 		double angleIncrement = Math.PI / 30; // Tốc độ xoắn
@@ -134,7 +137,7 @@ public class Enemy implements Entity {
 		for (int i = 0; i < bulletsPerWave; i++) {
 			double angle = spiralAngle + (2 * Math.PI / bulletsPerWave) * i;
 
-			Bullet bullet = new Bullet(x + enemyWidth / 2 - 5, y + enemyHeight, 1, angle, 0);
+			Bullet bullet = new Bullet(x + enemyWidth / 2 - 5, y + enemyHeight, attackSpeed, angle, 0);
 
 			// Có thể điều chỉnh tốc độ đạn xoắn ốc
 			bullet.setSpeed(6); // Thêm method setSpeed() trong class Bullet
@@ -146,7 +149,7 @@ public class Enemy implements Entity {
 	}
 
 	private void attackFan() {
-		int bulletCount = 7; // Số lượng đạn
+		int bulletCount = 17; // Số lượng đạn
 		double spreadAngle = 90; // Góc mở hình quạt (độ)
 
 		double startAngle = centerAngle - spreadAngle / 2;
@@ -156,7 +159,7 @@ public class Enemy implements Entity {
 			double angleDeg = startAngle + i * angleStep;
 //			double angleRad = Math.toRadians(angleDeg);
 
-			Bullet bullet = new Bullet(x + enemyWidth / 2 - 5, y + enemyHeight, 1, // Tốc độ đạn
+			Bullet bullet = new Bullet(x + enemyWidth / 2 - 5, y + enemyHeight, attackSpeed, // Tốc độ đạn
 					angleDeg, // Góc bắn (độ)
 					0);
 
@@ -186,7 +189,7 @@ public class Enemy implements Entity {
 //	}
 
 	private void attackWave() {
-		int bulletCount = 7; // số viên đạn trong dải
+		int bulletCount = 14; // số viên đạn trong dải
 		double spread = board.getW() - 40; // bắn khắp chiều ngang (chừa 20px biên)
 		double spacing = spread / (bulletCount - 1);
 
@@ -195,7 +198,7 @@ public class Enemy implements Entity {
 			double startY = 0;
 			double phase = i * Math.PI / 4; // pha khác nhau
 
-			Bullet b = new Bullet(startX, startY, speed, 0, phase);
+			Bullet b = new Bullet(startX, startY, attackSpeed, 0, phase);
 			bullets.add(b);
 		}
 	}

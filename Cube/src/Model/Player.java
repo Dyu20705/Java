@@ -12,9 +12,10 @@ public class Player implements Entity {
 	private double playerHeight = 48;
 	private double x;
 	private double y;
-	private int hp = 20;
-	private final int maxHp = 20;
+	private int hp = 3;
+	private final int maxHp = 3;
 	private int speed = 10;
+	private boolean isDashed = false;
 	private final Image model = new ImageIcon(getClass().getResource("/img/Cube.png")).getImage();
 	private final Image heartModel = new ImageIcon(getClass().getResource("/img/heart.png")).getImage();
 	private Board board;
@@ -142,5 +143,19 @@ public class Player implements Entity {
 	    this.hp = this.maxHp; // Khôi phục lại máu
 	    this.x = 680;      // Vị trí ban đầu
 	    this.y = 600;
+	}
+	
+	public void dash() {
+		if (!isDashed) {
+			speed *= 6;
+			isDashed = true;
+		}
+	}
+	
+	public void undash() {
+		if (isDashed) {
+			speed /= 6;
+			isDashed = false;
+		}
 	}
 }

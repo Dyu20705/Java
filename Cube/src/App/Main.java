@@ -7,6 +7,7 @@ import javax.swing.*;
 import Controller.Game;
 import Model.Enemy;
 import Model.Player;
+import Utils.ExceptionHandler;
 import View.Board;
 import View.Menu;
 
@@ -15,6 +16,7 @@ public class Main {
 	private static Board board;
 
 	public static void init() {
+		ExceptionHandler.setupGlobalExceptionHandler();
 		// Set window properties
 		JFrame window = new JFrame();
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -28,8 +30,8 @@ public class Main {
 		board = new Board();
 		Game game = new Game(player, enemy, board);
 		menu = new Menu(game);
-		game.setMenu(menu);
 		
+		game.setMenu(menu);
 		board.setEnemy(enemy);
 		board.setPlayer(player);
 		player.setBoard(board);
